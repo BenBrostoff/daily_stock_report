@@ -1,0 +1,6 @@
+yahoo-finance==1.2.1
+beautifulsoup4==4.4.0
+gspread==0.2.5
+mandrill==1.0.57
+oauth2client==1.5.2
+requests==2.5.1
