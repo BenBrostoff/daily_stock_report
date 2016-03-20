@@ -18,6 +18,11 @@ class Article():
 
 class Stock():
 
+    STOCK_HTML = "<strong>%s</strong> \
+                <br>CAP: %s \
+                <br>PRICE: %s <span style='color:%s'>(%s)</span> \
+                <br>YLOW: %s (%s) <br>YHIGH: %s (%s)"
+
     def __init__(self, ticker, share):
         self.articles = []
         self.ticker = ticker
@@ -50,19 +55,17 @@ class Stock():
         except:
             print 'Error converting articles'
 
-    def convert_to_html(self):
-        def style(change):
-            if '+' in change:
-                return 'green'
-            else:
-                return 'red'
+    @staticmethod
+    def style(change):
+        if '+' in change:
+            return 'green'
+        else:
+            return 'red'
 
-        base = "<strong>%s</strong> \
-                <br>CAP: %s \
-                <br>PRICE: %s <span style='color:%s'>(%s)</span> \
-                <br>YLOW: %s (%s) <br>YHIGH: %s (%s)" % (
+    def convert_to_html(self):
+        base = self.STOCK_HTML % (
             self.ticker, self.mcap, self.price,
-            style(self.day_change),
+            self.style(self.day_change),
             self.day_change,
             self.year_low, self.off_low,
             self.year_high, self.off_high)
