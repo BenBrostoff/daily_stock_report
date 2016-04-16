@@ -11,12 +11,17 @@ from yahoo_finance import Share, YQLQueryError
 
 from stocks import Stock, Article
 from stock_tweets import DailyTweets, StockTweet
+from trends import get_trend_score
 
 _MARKIT_API = 'http://dev.markitondemand.com/Api/v2/Quote/json?symbol={}'
 EMAIL_CLIENT = mandrill.Mandrill(environ.get('MANDRILL_KEY'))
 
-def build_email(favs, tweets):
+def build_email(queries, favs, tweets):
     message_body = ''
+    for q in queries:
+        message_body += '{} -> {}'.format(q, get_trend_score(q))
+        message_body += '<br>'
+
     for fav in favs:
         try:
             message_body += Stock(fav, Share(fav)).convert_to_html() 
@@ -54,9 +59,9 @@ def __get_spreadsheet_client():
 
     return gspread.authorize(credentials)
 
-def __get_favorites(gc):
+def __get_favorites(gc, sheet):
     favorites = gc.open("Favorites") \
-                  .worksheet("Favorites") \
+                  .worksheet(sheet) \
                   .get_all_values()
 
     return [item for sublist in favorites for item in sublist]
@@ -69,7 +74,8 @@ def __get_tweets():
     return tweets
 
 gc = __get_spreadsheet_client()
-favs = __get_favorites(gc)
+favs = __get_favorites(gc, "Stocks")
+queries = __get_favorites(gc, "Queries")
 tweets = __get_tweets()
 
-EMAIL_CLIENT.messages.send(message=build_email(favs, tweets))
+EMAIL_CLIENT.messages.send(message=build_email(queries, favs, tweets))

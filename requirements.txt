@@ -4,3 +4,4 @@ gspread==0.2.5
 mandrill==1.0.57
 oauth2client==1.5.2
 requests==2.5.1
+pytrends==1.1.4
