@@ -6,7 +6,7 @@ import json
 
 from oauth2client.client import SignedJwtAssertionCredentials
 import gspread
-import mandrill
+import sendgrid
 from yahoo_finance import Share, YQLQueryError
 
 from stocks import Stock, Article
@@ -14,12 +14,21 @@ from stock_tweets import DailyTweets, StockTweet
 from trends import get_trend_score
 
 _MARKIT_API = 'http://dev.markitondemand.com/Api/v2/Quote/json?symbol={}'
-EMAIL_CLIENT = mandrill.Mandrill(environ.get('MANDRILL_KEY'))
+_SGRID_KEY = environ.get('SGRID_KEY')
+
+if not _SGRID_KEY:
+    raise Exception('Sendgrid API key required!')
+
+EMAIL_CLIENT = sendgrid.SendGridClient(_SGRID_KEY)
+_my_email = 'ben.brostoff@gmail.com'
 
 def build_email(queries, favs, tweets):
+    message = sendgrid.Mail()
+
     message_body = ''
     for q in queries:
-        message_body += '{} -> {}'.format(q, get_trend_score(q))
+        trend = get_trend_score(q)
+        message_body += '{} -> Year: {}, Week: {}: '.format(q, trend.trailing_avg, trend.recent_avg)
         message_body += '<br>'
 
     for fav in favs:
@@ -43,12 +52,11 @@ def build_email(queries, favs, tweets):
     for tweet in tweets:
         message_body += tweet.convert_to_html()
 
-    return {
-        'to': [{'email': 'ben.brostoff@gmail.com'}],
-        'from_email': 'ben.brostoff@gmail.com',
-        'html': message_body,
-        'subject': datetime.now().strftime("%B %d, %Y") + ' Stock Report'
-    }
+    message.add_to(_my_email)
+    message.set_from(_my_email)
+    message.set_subject(datetime.now().strftime("%B %d, %Y") + ' Stock Report')
+    message.set_html(message_body)
+    return message
 
 def __get_spreadsheet_client():
     json_key = json.load(open(environ.get('KEY_LOCATION')))
@@ -78,4 +86,4 @@ favs = __get_favorites(gc, "Stocks")
 queries = __get_favorites(gc, "Queries")
 tweets = __get_tweets()
 
-EMAIL_CLIENT.messages.send(message=build_email(queries, favs, tweets))
+EMAIL_CLIENT.send(build_email(queries, favs, tweets))

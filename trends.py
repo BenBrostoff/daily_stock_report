@@ -1,3 +1,4 @@
+import logging
 import re
 import csv
 from time import sleep
@@ -5,6 +6,11 @@ from cStringIO import StringIO
 from os import environ
 from IPython import embed
 from pytrends.pyGTrends import pyGTrends, _clean_subtable, _parse_rows
+
+logging.basicConfig()
+
+_GNAME, _GPASS = environ.get('gname'), environ.get('gpass')
+_log = logging.getLogger(__name__)
 
 def parse_data(data):
     """
@@ -36,15 +42,29 @@ def parse_data(data):
 
     return parsed_data
 
-def get_trend_score(query):
+class TrendAnalysis(object):
+    def __init__(self, query, res):
+        self.query = query
+        self.res = res
+
+    def set_stats(self, trail=52, recent=3):
+        trailing_pop = [x[self.query.lower()] for x
+                        in self.res['interest_over_time'][(trail * -1):]
+                        if x[self.query.lower()] is not None]
+        self.trailing_avg = sum(trailing_pop) / trail
+        self.trailing_weeks = trail
+        self.recent_avg = sum(trailing_pop[(recent * -1):]) / recent
+
+def get_trend_score(query, horizon=52, trail=3):
     try:
-        connector = pyGTrends(environ.get('gname'), environ.get('gpass'))
+        connector = pyGTrends(_GNAME, _GPASS)
         connector.request_report(query)
         sleep(5)
 
         stock_data = parse_data(connector.decode_data)
-        popularity = stock_data['interest_over_time'][-1].values()[-1]
-        return popularity
+        trend = TrendAnalysis(query, stock_data)
+        trend.set_stats()
+        return trend
     except Exception as e:
-        print(e)
+        _log.error(e)
         return "N/A"
