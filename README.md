@@ -2,5 +2,5 @@ This script reads off a spreadsheet I've set up on Google Drive where I've liste
 
 For any type of re-use here, you'll need a Mandrill account and API access for Drive. 
 
-- <a href="https://www.mandrill.com/" target="_blank">Mandrill</a>
+- <a href="https://www.mailgun.com/" target="_blank">Mailgun</a>
 - <a href="http://gspread.readthedocs.org/en/latest/oauth2.html" target="_blank">Good Drive setup walkthrough for gdrive</a>
