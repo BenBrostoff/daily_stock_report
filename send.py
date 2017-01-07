@@ -9,9 +9,7 @@ import gspread
 import sendgrid
 from yahoo_finance import Share, YQLQueryError
 
-from stocks import Stock, Article
-from stock_tweets import DailyTweets, StockTweet
-from trends import get_trend_score
+from stocks import Stock
 
 _MARKIT_API = 'http://dev.markitondemand.com/Api/v2/Quote/json?symbol={}'
 _SGRID_KEY = environ.get('SGRID_KEY')
@@ -19,18 +17,19 @@ _SGRID_KEY = environ.get('SGRID_KEY')
 if not _SGRID_KEY:
     raise Exception('Sendgrid API key required!')
 
-EMAIL_CLIENT = sendgrid.SendGridClient(_SGRID_KEY)
+_EMAIL_CLIENT = sendgrid.SendGridClient(_SGRID_KEY)
 _my_email = 'ben.brostoff@gmail.com'
 
-def build_email(queries, favs, tweets):
+def run():
+    gc = _get_spreadsheet_client()
+    queries = _get_favorites(gc, "Queries")
+    favs = _get_favorites(gc, 'Stocks')
+    _EMAIL_CLIENT.send(_build_email(queries, favs))
+
+def _build_email(favs):
     message = sendgrid.Mail()
 
     message_body = ''
-    for q in queries:
-        trend = get_trend_score(q)
-        message_body += '{} -> Year: {}, Week: {}: '.format(q, trend.trailing_avg, trend.recent_avg)
-        message_body += '<br>'
-
     for fav in favs:
         try:
             message_body += Stock(fav, Share(fav)).convert_to_html() 
@@ -49,41 +48,27 @@ def build_email(queries, favs, tweets):
                     'Unavailable', 'Unavailable')
         message_body += '<br>' * 2
 
-    for tweet in tweets:
-        message_body += tweet.convert_to_html()
-
     message.add_to(_my_email)
     message.set_from(_my_email)
     message.set_subject(datetime.now().strftime("%B %d, %Y") + ' Stock Report')
     message.set_html(message_body)
     return message
 
-def __get_spreadsheet_client():
+def _get_spreadsheet_client():
     json_key = json.load(open(environ.get('KEY_LOCATION')))
     scope = ['https://spreadsheets.google.com/feeds']
 
-    credentials = SignedJwtAssertionCredentials(json_key['client_email'], 
-        json_key['private_key'].encode(), scope)
+    credentials = SignedJwtAssertionCredentials(
+        json_key['client_email'],
+        json_key['private_key'].encode(),
+        scope
+    )
 
     return gspread.authorize(credentials)
 
-def __get_favorites(gc, sheet):
+def _get_favorites(gc, sheet):
     favorites = gc.open("Favorites") \
                   .worksheet(sheet) \
                   .get_all_values()
 
     return [item for sublist in favorites for item in sublist]
-
-def __get_tweets():
-    tweets = []
-    for tweet in DailyTweets.get_tweets():
-        tweets.append(StockTweet(tweet))
-
-    return tweets
-
-gc = __get_spreadsheet_client()
-favs = __get_favorites(gc, "Stocks")
-queries = __get_favorites(gc, "Queries")
-tweets = __get_tweets()
-
-EMAIL_CLIENT.send(build_email(queries, favs, tweets))
