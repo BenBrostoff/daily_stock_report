@@ -38,6 +38,8 @@ class Stock():
         self.gather_headlines()
 
     def diff_per(self, comp):
+        if not price:
+            return 'Price not available'
         per = 100 * (float(self.price) - float(comp)) / float(self.price)
         return "%.2f" % per + '%'
 
