@@ -13,6 +13,7 @@ from stocks import Stock
 _MARKIT_API = 'http://dev.markitondemand.com/Api/v2/Quote/json?symbol={}'
 _EMAIL = environ.get('EMAIL')
 
+
 def run():
     gc = _get_spreadsheet_client()
     favs = _get_favorites(gc, 'Stocks')
@@ -27,6 +28,7 @@ def run():
             'html': _build_email(favs)
         }
     )
+
 
 def _build_email(favs):
     message_body = ''
@@ -51,6 +53,7 @@ def _build_email(favs):
 
     return message_body
 
+
 def _get_spreadsheet_client():
     json_key = json.load(open(environ.get('KEY_LOCATION')))
     scope = ['https://spreadsheets.google.com/feeds']
@@ -62,6 +65,7 @@ def _get_spreadsheet_client():
     )
 
     return gspread.authorize(credentials)
+
 
 def _get_favorites(gc, sheet):
     favorites = gc.open("Favorites") \

@@ -1,4 +1,4 @@
-git+https://github.com/BenBrostoff/yahoo-finance.git@f9ef67501a0640708f928434be7f13d3693ef395
+yahoo-finance===1.2.1
 beautifulsoup4==4.4.0
 gspread==0.2.5
 oauth2client==1.5.2
