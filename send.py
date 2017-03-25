@@ -74,4 +74,5 @@ def _get_favorites(gc, sheet):
 
     return [item for sublist in favorites for item in sublist]
 
-run()
+outcome = run()
+print('Process complete: {}'.format(outcome))
