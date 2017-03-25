@@ -1,4 +1,4 @@
-yahoo-finance===1.2.1
+yahoo-finance===1.4.0
 beautifulsoup4==4.4.0
 gspread==0.2.5
 oauth2client==1.5.2
